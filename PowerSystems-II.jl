@@ -1,5 +1,5 @@
 # ----------------------------------------------
-# Session 4: Part - 1: Parsing Power System Data
+# Part - 1: Parsing Power System Data
 # ----------------------------------------------
 using PowerSystems
 using PowerSimulations
