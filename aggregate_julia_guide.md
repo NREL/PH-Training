@@ -1,5 +1,5 @@
 
-# Julia 1.10 Development in VSCode: Comprehensive Beginner’s Guide
+# Session 2 : Julia 1.10 Development in VSCode - Comprehensive Beginner’s Guide
 
 ---
 

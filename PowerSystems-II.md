@@ -1,4 +1,4 @@
-# Sienna System Generation Training Script
+# Session 4 : Sienna System Generation Training Script
 
 This script demonstrates how to use the PowerSystemsCaseBuilder.jl package and provides a step-by-step guide to explore and build power system models.
 
