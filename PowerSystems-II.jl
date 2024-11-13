@@ -1,6 +1,6 @@
 # ----------------------------------------------
-# Session 4 : Making System Modifications & Accessing 
-# Components
+# Session 4 : Making Sienna System Modifications & 
+# Selecting Components
 # ----------------------------------------------
 
 # Sienna System Modification Training Script
@@ -20,6 +20,39 @@ using Dates
 
 # Loading the system
 sys = PSY.System("data/RTS_GMLC_DA.json")
+
+# Add a component in NATURAL Units
+# Step 1: Set your (previously-defined) System's units base to "NATURAL_UNITS":
+set_units_base_system!(sys, "NATURAL_UNITS")
+
+# Step 2: Define an empty component with 0.0 or nothing for all the power-related fields except base_power, which is always in MVA.
+gas1 = ThermalStandard(;
+    name = "gas1",
+    available = true,
+    status = true,
+    bus = get_component(ACBus, system, "Cobb"), # Attach to a previously-defined bus named Cobb
+    active_power = 0.0,
+    reactive_power = 0.0,
+    rating = 0.0,
+    active_power_limits = (min = 0.0, max = 0.0),
+    reactive_power_limits = nothing,
+    ramp_limits = nothing,
+    operation_cost = ThermalGenerationCost(nothing),
+    base_power = 30.0, # MVA
+    time_limits = (up = 8.0, down = 8.0), # Hours, unaffected by per-unitization
+    must_run = false,
+    prime_mover_type = PrimeMovers.CC,
+    fuel = ThermalFuels.NATURAL_GAS,
+);
+
+# Step 3 :Attach the component to your System:
+add_component!(system, gas1)
+
+# Step 4: Use individual "setter" functions to set each the value of each numeric field in natural units:
+set_rating!(gas1, 30.0) #MVA
+set_active_power_limits!(gas1, (min = 6.0, max = 30.0)) # MW
+set_reactive_power_limits!(gas1, (min = 6.0, max = 30.0)) # MVAR
+set_ramp_limits!(gas1, (up = 6.0, down = 6.0)) #MW/min
 
 # Transforming Static Time Series into Forecasts
 # In many modeling workflows, it's common to transform data generated from a realization and stored in a single column into deterministic forecasts.

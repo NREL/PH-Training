@@ -1,226 +1,4 @@
-# Session 4 : Sienna System Generation Training Script
-
-This script demonstrates how to use the PowerSystemsCaseBuilder.jl package and provides a step-by-step guide to explore and build power system models.
-
-## Introduction
-
-In this script, we will utilize the PowerSystemsCaseBuilder.jl package, which houses a curated set of test systems. These test systems serve two primary purposes:
-
-1. They assist the Sienna development team in testing new features.
-2. They provide users with access to these test systems to facilitate their journey of learning and exploring Sienna.
-
-## Step 1: Show All Systems for All Categories
-
-To begin, we can list all the available test systems using the `show_systems()` function.
-
-```julia
-using PowerSystemCaseBuilder
-show_systems()
-```
-
-## Step 2: Show All Categories
-
-Next, let's explore the various categories available for these test systems.
-
-```julia
-using PowerSystemCaseBuilder
-show_categories()
-```
-
-## Step 3: Show All Systems for One Category
-
-Now, we can delve deeper into a specific category, such as `PSISystems`, to see the systems it contains.
-
-```julia
-using PowerSystemCaseBuilder
-show_systems(PSISystems)
-```
-
-## Step 4: Build a System
-
-Let's proceed by building a specific system from the available test systems. When doing so, two crucial arguments to consider are:
-
-1. `time_series_directory`: While not required for local machine usage, it's necessary when running on NREL's HPC systems (Eagle or Kestrel). Users should pass `time_series_directory="/tmp/scratch"` as an argument.
-
-2. `time_series_read_only`: This option loads the system in read-only mode, which can be helpful when dealing with large datasets. If you wish to edit time series information, do not use this option.
-
-Here, we build two systems as examples:
-
-1. The first system is the RTS Day-ahead system, which contains hourly time series data.
-
-```julia
-sys_da = PSB.build_system(PSISystems, "modified_RTS_GMLC_DA_sys";
-                       time_series_directory="/tmp/scratch")
-```
-
-2. The second system is the RTS Real-time system, featuring 5-minute time series data.
-
-```julia
-sys_rt = PSB.build_system(PSISystems, "modified_RTS_GMLC_RT_sys";
-                       time_series_directory="/tmp/scratch")
-```
-
-## Step 5: Save the System to JSON
-
-Finally, we can save the system data to a JSON file for further analysis.
-
-```julia
-PSY.to_json(sys_da, "data/RTS_GMLC_DA.json")
-PSY.to_json(sys_rt, "data/RTS_GMLC_RT.json")
-```
-
-This script provides a foundation for working with Sienna's power system models, exploring available test systems, and building custom models for analysis and simulation.
----
-
-```markdown
-# Tutorial: Building Sienna System Objects using PowerSystems.jl
-
----
-
-## Introduction
-
-In this tutorial, we will use **PowerSystems.jl**, **PowerSimulations.jl**, and **PowerSystemCaseBuilder.jl** to demonstrate how to build Sienna system objects. The tutorial leverages the curated Power Systems Test Data, which provides test systems useful for:
-1. Assisting the Sienna development team in testing new features.
-2. Offering users a starting point for understanding and exploring Sienna.
-
----
-
-## Dependencies
-
-To begin, make sure the necessary packages are loaded:
-
-```julia
-using PowerSystems
-using PowerSimulations
-using PowerSystemCaseBuilder
-
-const PSB = PowerSystemCaseBuilder
-const PSY = PowerSystems
-```
-
----
-
-## Accessing Test Data
-
-The **PowerSystemCaseBuilder.jl** library includes several example datasets in different formats (e.g., PSSE RAW, Matpower, tabular CSV). These datasets allow us to build power system objects for further exploration.
-
-### Listing Available RAW Files
-
-```julia
-readdir(joinpath(PSB.DATA_DIR, "psse_raw"))
-```
-
-### Copying Test Data to Local Directory
-
-We will copy some essential files for demonstration purposes:
-
-```julia
-# Copy the PSSE RAW file for RTS-GMLC.
-cp(joinpath(PSB.DATA_DIR, "psse_raw", "RTS-GMLC.RAW"), "data/RTS-GMLC.RAW")
-
-# Copy the Matpower RTS-GMLC file.
-cp(joinpath(PSB.DATA_DIR, "matpower", "RTS_GMLC.m"), "data/RTS_GMLC.m")
-
-# Copy the entire RTS-GMLC data directory.
-RTS_GMLC_DIR = joinpath(PSB.DATA_DIR, "RTS_GMLC")
-cp(RTS_GMLC_DIR, "data/RTS_GMLC")
-```
-
----
-
-## Parsing Files into Sienna System Objects
-
-We can now parse the copied files using `PowerSystems.jl` to create Sienna system objects.
-
-### Example 1: Parsing a PSSE RAW File
-
-PSSE files store network-related information. Devices will be initially parsed as `ThermalStandard` types, but they can later be converted to other generator types. The parser supports PSSE RAW formats up to version 33.
-
-```julia
-sys_psse = System("./data/RTS-GMLC.RAW")
-```
-
-### Example 2: Parsing a Matpower .m File
-
-Matpower files contain comprehensive data, which allows for constructing a complete PCM system in a single step.
-
-```julia
-sys_matpower = System("./data/RTS_GMLC.m")
-```
-
-### Example 3: Parsing Tabular Data Format
-
-In this format, CSV files are used to store data for each infrastructure type (e.g., `bus.csv`, `branch.csv`). Time series data can also be parsed using pointers and metadata files, providing flexibility in representation and storage.
-
-```julia
-rawsys = PSY.PowerSystemTableData(
-    RTS_GMLC_DIR,
-    100.0,  # Base power
-    joinpath(RTS_GMLC_DIR, "user_descriptors.yaml");
-    timeseries_metadata_file = joinpath(RTS_GMLC_DIR, "timeseries_pointers.json"),
-    generator_mapping_file = joinpath(RTS_GMLC_DIR, "generator_mapping.yaml")
-)
-
-# Create the system object with a 1-hour time series resolution.
-sys = PSY.System(
-    rawsys; 
-    time_series_resolution = Dates.Hour(1), 
-    sys_kwargs...
-)
-
-# Transform the time series data to 24-hour periods.
-PSY.transform_single_time_series!(sys, 24, Dates.Hour(24))
-```
-
----
-
-## Summary
-
-This tutorial demonstrates how to build Sienna system objects from various file formats, including PSSE RAW, Matpower `.m`, and tabular CSV formats. The ability to parse different data formats enables users to easily explore and analyze power systems using **PowerSystems.jl**.
-
-### Key Steps Recap:
-1. Access system data files.
-2. Copy relevant files to a working directory.
-3. Parse the files to create system objects in Julia.
-4. Utilize time series transformations for further analysis.
-
----
-
-## Example Usage Script
-
-```julia
-using PowerSystems
-using PowerSimulations
-using PowerSystemCaseBuilder
-
-const PSB = PowerSystemCaseBuilder
-const PSY = PowerSystems
-
-# Copy PSSE and Matpower files to local data directory.
-cp(joinpath(PSB.DATA_DIR, "psse_raw", "RTS-GMLC.RAW"), "data/RTS-GMLC.RAW")
-cp(joinpath(PSB.DATA_DIR, "matpower", "RTS_GMLC.m"), "data/RTS_GMLC.m")
-
-# Parse PSSE RAW file.
-sys_psse = System("./data/RTS-GMLC.RAW")
-
-# Parse Matpower .m file.
-sys_matpower = System("./data/RTS_GMLC.m")
-
-# Parse tabular data format.
-RTS_GMLC_DIR = joinpath(PSB.DATA_DIR, "RTS_GMLC")
-rawsys = PSY.PowerSystemTableData(
-    RTS_GMLC_DIR,
-    100.0,
-    joinpath(RTS_GMLC_DIR, "user_descriptors.yaml");
-    timeseries_metadata_file = joinpath(RTS_GMLC_DIR, "timeseries_pointers.json"),
-    generator_mapping_file = joinpath(RTS_GMLC_DIR, "generator_mapping.yaml")
-)
-sys = PSY.System(rawsys; time_series_resolution = Dates.Hour(1))
-PSY.transform_single_time_series!(sys, 24, Dates.Hour(24))
-
-println("Sienna system objects successfully created!")
-```
-
+# Session 4 : Making Sienna System Modifications & Selecting Components
 ---
 # Sienna System Modification Training Script
 
@@ -241,6 +19,93 @@ using Dates
 ```julia
 sys = PSY.System("data/RTS_GMLC_DA.json");
 ```
+
+# Add a Component in Natural Units
+
+```@setup add_in_nu
+using PowerSystems; #hide
+using PowerSystemCaseBuilder #hide
+system = build_system(PSISystems, "modified_RTS_GMLC_DA_sys"); #hide
+```
+
+`PowerSystems.jl` has [three per-unitization options](@ref per_unit) for getting, setting
+and displaying data.
+
+Currently, only one of these options -- `"DEVICE_BASE"` -- is supported when using a
+constructor function define a component. You can see
+[an example of the default capabilities using `"DEVICE_BASE"` here](@ref "Adding Loads and Generators").
+
+We hope to add capability to define components in
+`"NATURAL_UNITS"` with constructors in the future, but for now, below is a workaround
+for users who prefer to define data using `"NATURAL_UNITS"` (e.g., MW, MVA, MVAR, or MW/min):
+
+### Step 1: Set Units Base
+
+Set your (previously-defined) `System`'s units base to `"NATURAL_UNITS"`:
+
+```@repl add_in_nu
+set_units_base_system!(system, "NATURAL_UNITS")
+```
+
+Now, the "setter" functions have been switched to define data using natural units (MW, MVA,
+etc.), taking care of the necessary data conversions behind the scenes.
+
+### Step 2: Define Empty Component
+
+Define an empty component with `0.0` or `nothing` for all the power-related fields except
+`base_power`, which is always in MVA.
+
+For example:
+
+```@repl add_in_nu
+gas1 = ThermalStandard(;
+    name = "gas1",
+    available = true,
+    status = true,
+    bus = get_component(ACBus, system, "Cobb"), # Attach to a previously-defined bus named Cobb
+    active_power = 0.0,
+    reactive_power = 0.0,
+    rating = 0.0,
+    active_power_limits = (min = 0.0, max = 0.0),
+    reactive_power_limits = nothing,
+    ramp_limits = nothing,
+    operation_cost = ThermalGenerationCost(nothing),
+    base_power = 30.0, # MVA
+    time_limits = (up = 8.0, down = 8.0), # Hours, unaffected by per-unitization
+    must_run = false,
+    prime_mover_type = PrimeMovers.CC,
+    fuel = ThermalFuels.NATURAL_GAS,
+);
+```
+
+### Step 3: Attach the Component
+
+Attach the component to your `System`:
+
+```@repl add_in_nu
+add_component!(system, gas1)
+```
+
+### Step 4: Add Data with "setter" Functions
+
+Use individual "setter" functions to set each the value of each numeric field in natural
+units:
+
+```@repl add_in_nu
+set_rating!(gas1, 30.0) #MVA
+set_active_power_limits!(gas1, (min = 6.0, max = 30.0)) # MW
+set_reactive_power_limits!(gas1, (min = 6.0, max = 30.0)) # MVAR
+set_ramp_limits!(gas1, (up = 6.0, down = 6.0)) #MW/min
+```
+
+Notice the return values are divided by the `base_power` of 30 MW, showing the setters have
+done the per-unit conversion into `"DEVICE_BASE"` behind the scenes.
+
+!!! tip
+    
+Steps 2-4 can be called within a `for` loop to define many components at once (or step 3
+can be replaced with [`add_components!`](@ref) to add all components at once).
+
 
 ## Transform Static Time Series into Forecasts
 
