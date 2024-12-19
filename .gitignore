@@ -41,6 +41,7 @@ docs/site/
 Manifest.toml
 .vscode
 *.h5
+*.csv
 
 ################################################################################
 #                              Operating systems                               #

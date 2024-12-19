@@ -118,11 +118,16 @@ PSY.transform_single_time_series!(sys, Dates.Hour(24), Dates.Hour(24))
 # user_descriptors.yaml - https://github.com/GridMod/RTS-GMLC/blob/master/RTS_Data/FormattedData/SIIP/user_descriptors.yaml
 # generator_mapping.yaml - https://github.com/GridMod/RTS-GMLC/blob/master/RTS_Data/FormattedData/SIIP/generator_mapping.yaml
 # ----------------------------------------------
-data_dir = "/data/my-data-dir"
+using PowerSystems
+using PowerSystemCaseBuilder
+using Dates
+using DataFrames
+
+data_dir = "data/my-data-dir"
 base_power = 100.0
-descriptors = "./user_descriptors.yaml"
-timeseries_metadata_file = "./timeseries_pointers.json"
-generator_mapping_file = "./generator_mapping.yaml"
+descriptors = joinpath(data_dir,"user_descriptors.yaml")
+timeseries_metadata_file = joinpath(data_dir,"timeseries_pointers.json")
+generator_mapping_file = joinpath(data_dir,"generator_mapping.yaml")
 data = PowerSystemTableData(
     data_dir,
     base_power,
@@ -130,15 +135,16 @@ data = PowerSystemTableData(
     timeseries_metadata_file = timeseries_metadata_file,
     generator_mapping_file = generator_mapping_file,
 )
-sys = System(data; time_series_in_memory = true)
+sys = System(data; time_series_resolution = Dates.Hour(1),time_series_in_memory = true)
 
 # Extending tabular data parser
 function demo_bus_csv_parser!(data::PowerSystemTableData)
-    for bus in iterate_rows(data, BUS::InputCategory)
-        @show bus.name, bus.max_active_power, bus.max_reactive_power
+    for bus in eachrow(data.category_to_df[PSY.InputCategoryModule.InputCategory.BUS])
+        @show bus["Bus Name"], bus["MW Load"], bus["MVAR Load"]
     end
 end
 
+demo_bus_csv_parser!(data)
 # ----------------------------------------------
 # Part - 4 : Adding time series data from CSV's
 # ----------------------------------------------
@@ -162,8 +168,9 @@ add_time_series!(sys, fname)
 # ----------------------------------------------
 # Part - 5 : getting buses and generators in a System
 # ----------------------------------------------
+sys = PSB.build_system(PSISystems, "modified_RTS_GMLC_DA_sys");
 # Option 1a: Get an iterator for all the buses
-bus_iter = get_components(ACBus, system)
+bus_iter = get_components(ACBus, sys)
 
 for b in bus_iter
     set_base_voltage!(b, 330.0)
@@ -173,29 +180,29 @@ end
 buses = collect(get_components(ACBus, system))
 
 # Option 2a: Get the buses in an Area or LoadZone
-show_components(Area, system) # See available Areas
-area2 = get_component(Area, system, "2"); # Get Area named 2
-area_buses = get_buses(system, area2)
+show_components(Area, sys) # See available Areas
+area2 = get_component(Area, sys, "2"); # Get Area named 2
+area_buses = get_buses(sys, area2)
 
 PSY.get_aggregation_topology_mapping(PSY.Area, sys)
 
 # Option 2b: Get buses by ID number
-buses_by_ID = get_buses(system, Set(101:110))
+buses_by_ID = get_buses(sys, Set(101:110))
 
-get_number.(get_components(ACBus, system))
+get_number.(get_components(ACBus, sys))
 
 # Using get_available_components to get an iterator
-gen_iter = get_available_components(Generator, system)
+gen_iter = get_available_components(Generator, sys)
 get_name.(gen_iter)
 
 # We could also get a certain subtype of Generator
-gen_iter = get_available_components(RenewableDispatch, system)
+gen_iter = get_available_components(RenewableDispatch, sys)
 
 # Using get_available_components to get a vector
-gens = collect(get_available_components(Generator, system));
+gens = collect(get_available_components(Generator, sys));
 
 # Using get_components to get an iterator
-gen_iter = get_components(get_available, Generator, system)
+gen_iter = get_components(get_available, Generator, sys)
 
 # ----------------------------------------------
 # Part - 5 : Adding an Operating Cost & Write, View, and Load Data with a JSON
@@ -214,7 +221,11 @@ cost = ThermalGenerationCost(;
 )
 
 sys = build_system(PSISystems, "c_sys5_pjm")
-folder = mkdir("mysystems");
+
+if ~isdir(joinpath(@__DIR__,"mysystems"))
+    mkpath(joinpath(@__DIR__,"mysystems"))
+end
+folder = joinpath(@__DIR__,"mysystems")
 path = joinpath(folder, "system.json")
 to_json(sys, path)
 
@@ -232,3 +243,7 @@ import TypeTree: tt
 docs_dir = joinpath(pkgdir(PowerSystems), "docs", "src", "tutorials", "utils"); 
 include(joinpath(docs_dir, "docs_utils.jl")); 
 print(join(tt(TimeSeriesData), "")) 
+print(join(tt(StaticLoad), ""))
+print(join(tt(Generator), ""))
+print(join(tt(Storage), ""))
+print(join(tt(StaticInjection), ""))

@@ -437,7 +437,7 @@ println(df_from_csv)
 using DelimitedFiles
 
 # Create a sample CSV file for demonstration
-path = "iris_sample.csv"
+path = "sample.csv"
 readdlm(path, ',', header=true)  # Read data with headers
 
 # Handling data and headers separately
