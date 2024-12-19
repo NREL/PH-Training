@@ -46,8 +46,8 @@ sys_rt = PSB.build_system(PSISystems, "modified_RTS_GMLC_RT_sys")
 
 # Step 5: Save the system to JSON
 # We can save the system data to a JSON file for further analysis.
-PSY.to_json(sys_da, "data/RTS_GMLC_DA.json")
-PSY.to_json(sys_rt, "data/RTS_GMLC_RT.json")
+PSY.to_json(sys_da, "data/RTS_GMLC_DA.json", pretty = true)
+PSY.to_json(sys_rt, "data/RTS_GMLC_RT.json", pretty = true)
 
 # Accessing Test Data Setup:
 # --------------------
@@ -69,8 +69,8 @@ cp(RTS_GMLC_DIR, "data/RTS_GMLC")
 # Part - 2: Parsing Power System Data
 # ----------------------------------------------
 using PowerSystems
-using PowerSimulations
 using PowerSystemCaseBuilder
+using Dates
 
 const PSB = PowerSystemCaseBuilder
 const PSY = PowerSystems
@@ -109,8 +109,8 @@ rawsys = PSY.PowerSystemTableData(
     timeseries_metadata_file = joinpath(RTS_GMLC_DIR, "timeseries_pointers.json"),
     generator_mapping_file = joinpath(RTS_GMLC_DIR, "generator_mapping.yaml"),
 )
-sys = PSY.System(rawsys; time_series_resolution = Dates.Hour(1), sys_kwargs...)
-PSY.transform_single_time_series!(sys, 24, Dates.Hour(24))
+sys = PSY.System(rawsys; time_series_resolution = Dates.Hour(1))
+PSY.transform_single_time_series!(sys, Dates.Hour(24), Dates.Hour(24))
 
 # ----------------------------------------------
 # Part - 3 : Customization to Tabular Data Parser
