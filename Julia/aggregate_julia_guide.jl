@@ -1,5 +1,6 @@
 # ==============================================
 # Session 2: Julia 1.10 Development: Comprehensive Guide 
+# ]add QuadGK, DataFrames, Statistics, CSV, DelimitedFiles
 # ==============================================
 
 # ----------------------------------------------
@@ -61,6 +62,10 @@ function multiply_by_two(n::Int64)
     return n * 2
 end
 
+function multiply_by_two(n::Float64)
+    return n * 2.0
+end
+
 println("Multiply by 2: ", multiply_by_two(4))  # Output: 8
 
 # NOTE: Uncommenting the next line will cause an error, because we declared the function to accept only Int64.
@@ -120,6 +125,10 @@ println("Integral result: ", integral_of_f(2, 3))  # Output: Integration result
 
 function say_hi()
     println("Hello from Julia!")
+end
+
+function say_hi(name::String)
+    println("$(name) is saying hello from Julia!")
 end
 
 # Call the function to see the message
@@ -291,7 +300,20 @@ println("Classic Musician: ", mozart)
 aure.instrumentsPlayed += 1  # Aure learned a new instrument
 println("Updated Rockstar: ", aure)
 
+# Modifying a field in immutable struct will throw an error
 
+# Structs with inner constrcutors
+mutable struct NewRockstar <: Musician
+    name::String
+    instrument::String
+    bandName::String
+    headbandColor::String
+    instrumentsPlayed::Int
+
+    NewRockstar(name, instrument, band_name, hb_color;instr =1) = new(name, instrument, band_name, hb_color,instr)
+end
+# Creating instances of the custom types
+new_aure = NewRockstar("Aurelio", "Voice", "Black Lotus", "red")
 # ----------------------------------------------
 # Working with DataFrames
 # ----------------------------------------------

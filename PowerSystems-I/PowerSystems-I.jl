@@ -2,7 +2,6 @@
 # Part - 1: Using PowerSystemCaseBuilder
 # ----------------------------------------------
 using PowerSystems
-using PowerSimulations
 using PowerSystemCaseBuilder
 const PSB = PowerSystemCaseBuilder
 const PSY = PowerSystems
@@ -13,17 +12,17 @@ const PSY = PowerSystems
 # 2) They provide users access to these test systems to begin their journey
 # of learning and exploring Sienna.
 
-# Step 1: Show all systems for all categories
-# We can start by listing all the available test systems.
-show_systems()
-
-# Step 2: Show all categories
+# Step 1: Show all categories
 # Let's see what categories are available for these test systems.
 show_categories()
 
+# Step 2: Show all systems for all categories
+# We can start by listing all the available test systems.
+show_systems()
+
 # Step 3: Show all systems for one category
-# Now, let's explore the systems within a specific category, e.g., PSISystems.
-show_systems(PSISystems)
+# Now, let's explore the systems within a specific category, e.g., PSYTestSystems.
+show_systems(PSYTestSystems)
 
 # Step 4: Build a system
 # Let's build a specific system from the available test systems.
@@ -36,6 +35,9 @@ show_systems(PSISystems)
 # to edit time series information.
 # The first system is the RTS Day-ahead system that contains hourly time
 # series data.
+if ~isdir(joinpath(@__DIR__,"data"))
+    mkpath(joinpath(@__DIR__,"data"))
+end
 
 sys_da = PSB.build_system(PSISystems, "modified_RTS_GMLC_DA_sys")
 # The second system is the RTS Real-time system that contains 5-minute
