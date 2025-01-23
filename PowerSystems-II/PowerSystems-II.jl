@@ -8,18 +8,12 @@
 # This script demonstrates how to manipulate data in a System and provides a step-by-step guide to exploring different functionalities provided in the PowerSystems.jl package.
 
 # Loading Sienna Packages and dependencies
-using PowerSimulations
-using InfrastructureSystems
 using PowerSystems
-const PSI = PowerSimulations
-const PSY = PowerSystems
-using DataFrames
-using TimeSeries
-using CSV
 using Dates
 
+const PSY = PowerSystems
 # Loading the system
-sys = PSY.System("data/RTS_GMLC_DA.json")
+sys = System(joinpath(dirname(@__DIR__),"PowerSystems-I","data","RTS_GMLC_DA.json"))
 
 # Add a component in NATURAL Units
 # Step 1: Set your (previously-defined) System's units base to "NATURAL_UNITS":
@@ -30,7 +24,7 @@ gas1 = ThermalStandard(;
     name = "gas1",
     available = true,
     status = true,
-    bus = get_component(ACBus, system, "Cobb"), # Attach to a previously-defined bus named Cobb
+    bus = get_component(ACBus, sys, "Cobb"), # Attach to a previously-defined bus named Cobb
     active_power = 0.0,
     reactive_power = 0.0,
     rating = 0.0,
@@ -46,7 +40,7 @@ gas1 = ThermalStandard(;
 );
 
 # Step 3 :Attach the component to your System:
-add_component!(system, gas1)
+add_component!(sys, gas1)
 
 # Step 4: Use individual "setter" functions to set each the value of each numeric field in natural units:
 set_rating!(gas1, 30.0) #MVA
@@ -58,7 +52,7 @@ set_ramp_limits!(gas1, (up = 6.0, down = 6.0)) #MW/min
 # In many modeling workflows, it's common to transform data generated from a realization and stored in a single column into deterministic forecasts.
 # This transformation accounts for the effects of lookahead without duplicating data.
 # transform_single_time_series!(sys, horizon, interval) where horizon is expected to be Int and Interval should be a time period.
-transform_single_time_series!(sys, 48, Hour(24))
+transform_single_time_series!(sys, Hour(48), Hour(24))
 
 # Accessing Components
 # You can access all the components of a particular type.
@@ -91,8 +85,8 @@ remove_components!(HydroDispatch, sys)
 # Setting Components Offline
 # To exclude components from the simulation without deleting them permanently, you can set them as unavailable.
 # For example, here's how to set thermal generators with a maximum active power limit of 0.0 as unavailable:
-for gen in PSY.get_components(x -> PSY.get_active_power_limits(x).max == 0.0, PSY.ThermalGen, sys)
-    PSY.set_available!(gen, false)
+for gen in get_components(x -> get_active_power_limits(x).max == 0.0, ThermalGen, sys)
+    set_available!(gen, false)
 end
 
 # Advanced Query Example
@@ -174,13 +168,15 @@ copy_time_series!(device, pv)  # Copy time series data from the original PV devi
 # Adding New Components
 function _build_battery(::Type{T}, bus::PSY.Bus, name::String, energy_capacity, rating, efficiency) where {T<:PSY.Storage}
     # Create a new storage device of the specified type
-    device = T(
+    device = T(;
         name=name,                         # Set the name for the new component
         available=true,                    # Mark the component as available
         bus=bus,                           # Assign the bus to the component
         prime_mover_type=PSY.PrimeMovers.BA,    # Set the prime mover to Battery
-        initial_energy=energy_capacity / 2,  # Set initial energy level
-        state_of_charge_limits=(min=energy_capacity * 0.1, max=energy_capacity),  # Set state of charge limits
+        storage_technology_type = PSY.StorageTech.LIB, # Make storage tech type Li-ion battery
+        storage_capacity = energy_capacity, # Use energy capacity passed by the user
+        storage_level_limits=(min=energy_capacity * 0.1, max=energy_capacity),  # Set state of charge limits
+        initial_storage_capacity_level= 0.5,  # Set initial energy level
         rating=rating,                     # Set the rating
         active_power=rating,               # Set active power equal to rating
         input_active_power_limits=(min=0.0, max=rating),  # Set input active power limits
@@ -188,7 +184,10 @@ function _build_battery(::Type{T}, bus::PSY.Bus, name::String, energy_capacity, 
         efficiency=(in=efficiency, out=1.0),  # Set efficiency
         reactive_power=0.0,                # Set reactive power
         reactive_power_limits=nothing,      # No reactive power limits
-        base_power=100.0                   # Set base power
+        base_power=100.0 ,                  # Set base power
+        operation_cost=PSY.StorageCost(nothing), # set operation cost
+        storage_target=0.0,
+        cycle_limits=9999,
     )
     
     return device  # Return the newly created component
@@ -196,7 +195,7 @@ end
 
 # Creating a copy of the device to add new capacity to the system.
 bus = PSY.get_bus(first(get_components(x-> PSY.get_prime_mover_type(x) == PSY.PrimeMovers.PVe && PSY.get_max_active_power(x) >= 150.0, PSY.RenewableDispatch, sys)))
-device = _build_battery(GenericBattery, bus, "new_battery", 10.0, 2.5, 0.8)  # Create a new battery component
+device = _build_battery(PSY.EnergyReservoirStorage, bus, "new_battery", 10.0, 2.5, 0.8)  # Create a new battery component
 
 add_component!(sys, device)  # Add the new battery component to the system
 

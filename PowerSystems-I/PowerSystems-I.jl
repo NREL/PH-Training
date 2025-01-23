@@ -177,7 +177,7 @@ for b in bus_iter
 end
 
 # Option 1b: Get a vector of all the buses
-buses = collect(get_components(ACBus, system))
+buses = collect(get_components(ACBus, sys))
 
 # Option 2a: Get the buses in an Area or LoadZone
 show_components(Area, sys) # See available Areas

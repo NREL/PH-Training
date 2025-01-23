@@ -10,8 +10,8 @@ _*.jl
 generated*.md
 
 # Test data
-data
-
+PowerSystems-I/data
+PowerSystems-I/mysystems
 # env
 env
 

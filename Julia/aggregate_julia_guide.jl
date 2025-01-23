@@ -284,6 +284,10 @@ struct ClassicMusician <: Musician
     instrument::String
 end
 
+function get_name(x::Musician)
+    return x.name
+end
+
 # ----------------------------------------------
 # Example Usage of Types and Structures
 # ----------------------------------------------
@@ -369,10 +373,12 @@ println(df[[1, 5, 10], :])  # Select specific rows by index
 # Selecting rows based on conditions:
 
 filtered_df = df[df.A .> 500, :]  # Rows where column A > 500
+filter(x -> x.A > 500, df)
 println("\nFiltered Data (A > 500):")
 println(filtered_df)
 
 filtered_df2 = df[(df.A .> 500) .& (300 .< df.C .< 400), :]
+filter(x -> (x.A > 500 && 300 < x.C < 400), df)
 println("\nFiltered Data (A > 500 and 300 < C < 400):")
 println(filtered_df2)
 
