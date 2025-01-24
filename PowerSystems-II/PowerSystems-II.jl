@@ -10,6 +10,7 @@
 # Loading Sienna Packages and dependencies
 using PowerSystems
 using Dates
+using TimeSeries
 
 const PSY = PowerSystems
 # Loading the system
